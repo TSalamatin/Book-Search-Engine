@@ -1,43 +1,36 @@
 const express = require('express');
-const path = require('path');
-const { ApolloServer } = require('apollo-server-express');
+// Import the ApolloServer class
+const { ApolloServer } = require('@apollo/server');
+const { expressMiddleware } = require('@apollo/server/express4');
+
+// Import the two parts of a GraphQL schema
 const { typeDefs, resolvers } = require('./schemas');
 const db = require('./config/connection');
-const routes = require('./routes');
 
 const PORT = process.env.PORT || 3001;
-const app = express();
-
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
-
-// Serve your static assets (e.g., React client) in production
-if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, '../client/build')));
-}
-
-// Create an instance of ApolloServer
 const server = new ApolloServer({
   typeDefs,
   resolvers,
 });
 
-// Start Apollo Server
-async function startApolloServer() {
+const app = express();
+
+// Create a new instance of an Apollo server with the GraphQL schema
+const startApolloServer = async () => {
   await server.start();
   
-  // Apply ApolloServer middleware to the /graphql endpoint
-  server.applyMiddleware({ app, path: '/graphql' });
+  app.use(express.urlencoded({ extended: false }));
+  app.use(express.json());
+  
+  app.use('/graphql', expressMiddleware(server));
 
-  // Start your MongoDB connection
   db.once('open', () => {
-    // Start your Express server
     app.listen(PORT, () => {
-      console.log(`Server is running on http://localhost:${PORT}`);
-      console.log(`GraphQL server is running on http://localhost:${PORT}${server.graphqlPath}`);
+      console.log(`API server running on port ${PORT}!`);
+      console.log(`Use GraphQL at http://localhost:${PORT}/graphql`);
     });
   });
-}
+};
 
 // Call the async function to start the server
 startApolloServer();
