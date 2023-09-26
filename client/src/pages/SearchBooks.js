@@ -8,11 +8,11 @@ import {
   Row
 } from 'react-bootstrap';
 
-import { useMutation } from '@apollo/client';
 import Auth from '../utils/auth';
-import { searchGoogleBooks } from '../utils/API';
+import { SAVE_BOOK } from '../utils/mutations';
+import {searchGoogleBooks} from '../utils/API'
 import { saveBookIds, getSavedBookIds } from '../utils/localStorage';
-import { SAVE_BOOK } from '../utils/mutations'
+import { useMutation } from '@apollo/client';
 
 const SearchBooks = () => {
   // create state for holding returned google api data
@@ -20,7 +20,7 @@ const SearchBooks = () => {
   // create state for holding our search field data
   const [searchInput, setSearchInput] = useState('');
 
-  const [saveBook, {error}] = useMutation(SAVE_BOOK)
+  const [saveBook] = useMutation(SAVE_BOOK)
   // create state to hold saved bookId values
   const [savedBookIds, setSavedBookIds] = useState(getSavedBookIds());
 
@@ -42,7 +42,6 @@ const SearchBooks = () => {
       const response = await searchGoogleBooks(searchInput);
 
       if (!response.ok) {
-        console.log(error)
         throw new Error('something went wrong!');
       }
 
@@ -53,11 +52,13 @@ const SearchBooks = () => {
         authors: book.volumeInfo.authors || ['No author to display'],
         title: book.volumeInfo.title,
         description: book.volumeInfo.description,
+        link: book.selfLink,
         image: book.volumeInfo.imageLinks?.thumbnail || '',
       }));
-
+  
       setSearchedBooks(bookData);
       setSearchInput('');
+
     } catch (err) {
       console.error(err);
     }
@@ -74,14 +75,14 @@ const SearchBooks = () => {
     if (!token) {
       return false;
     }
-
+    console.log(bookToSave)
     try {
-      const response = await saveBook(bookToSave, token);
 
-      if (!response.ok) {
-        throw new Error('something went wrong!');
-      }
+       const {data} = await saveBook({
+        variables:  {book: {...bookToSave}} ,
+      });
 
+      console.log(data)
       // if book successfully saves to user's account, save book id to state
       setSavedBookIds([...savedBookIds, bookToSave.bookId]);
     } catch (err) {
