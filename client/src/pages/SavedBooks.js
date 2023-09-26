@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Container,
   Card,
@@ -20,13 +20,14 @@ const SavedBooks = () => {
 
   const { loading, data, error } = useQuery(QUERY_ME)
 
-if (error) {
-  console.error(error)
-}
-
-  if (data?.me) {
-    setUserData(data)
+  //Set the userData when its done loading and there is data there
+useEffect(()=> {
+   if (!loading && data?.me) {
+    setUserData(data.me)
   }
+},[loading,data])
+
+
   
 
   // create function that accepts the book's mongo _id value as param and deletes the book from the database
